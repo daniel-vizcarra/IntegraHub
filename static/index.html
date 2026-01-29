@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntegraHub Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+        }
+
+        .dashboard-container {
+            display: none;
+        }
+
+        .card-stock {
+            transition: transform 0.2s;
+        }
+
+        .card-stock:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="container login-container">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white text-center">
+                <h3>IntegraHub Login</h3>
+            </div>
+            <div class="card-body">
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-control" value="admin" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" value="secret" readonly>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Sign In</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD SCREEN -->
+    <div id="dashboardScreen" class="container-fluid dashboard-container mt-4">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark rounded mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">IntegraHub ERP</a>
+                <div class="d-flex">
+                    <span class="navbar-text text-white me-3" id="userDisplay"></span>
+                    <button class="btn btn-outline-danger btn-sm" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="row">
+            <!-- LEFT COLUMN: ACTIONS -->
+            <div class="col-md-4">
+                <!-- CREATE PRODUCT -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-primary text-white">Add New Product</div>
+                    <div class="card-body">
+                        <form id="productForm">
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control form-control-sm" id="prodName"
+                                        placeholder="Name" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" class="form-control form-control-sm" id="prodPrice"
+                                        placeholder="$" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" class="form-control form-control-sm" id="prodStock"
+                                        placeholder="Qty" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm w-100 mt-2">Add Product</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- STOCK STATUS -->
+                <div class="card mb-4 shadow-sm card-stock">
+                    <div class="card-header bg-info text-white">Inventory Status</div>
+                    <div class="card-body text-center" id="stockContainer">
+                        <small class="text-muted">Select a product to see stock</small>
+                    </div>
+                </div>
+
+                <!-- CREATE ORDER -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">New Order</div>
+                    <div class="card-body">
+                        <form id="orderForm">
+                            <div class="mb-3">
+                                <label class="form-label">Customer Name</label>
+                                <input type="text" class="form-control" id="customerName" placeholder="e.g. Alice"
+                                    required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Cedula / NIT</label>
+                                <input type="text" class="form-control" id="cedula" placeholder="e.g. 12345678"
+                                    required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Product</label>
+                                <select class="form-select" id="productId">
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Quantity</label>
+                                <input type="number" class="form-control" id="quantity" value="1" min="1" required>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">Submit Order</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: ANALYTICS + LIVE ORDERS -->
+            <div class="col-md-8">
+                <!-- Analítica (Flujo D consigna) -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-dark text-white">Analítica</div>
+                    <div class="card-body py-2">
+                        <div class="row text-center small" id="analyticsContainer">
+                            <div class="col"><strong>Total pedidos</strong><br><span id="analyticsTotal">-</span></div>
+                            <div class="col"><strong>Ingresos (PROCESSED)</strong><br><span id="analyticsRevenue">-</span></div>
+                            <div class="col"><strong>Últimos 7 días</strong><br><span id="analyticsLast7">-</span></div>
+                            <div class="col"><strong>Por estado</strong><br><span id="analyticsByStatus" class="small">-</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                        <span>Live Order Tracking</span>
+                        <span class="badge bg-light text-dark">Polling: 2s</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Customer</th>
+                                        <th>Qty</th>
+                                        <th>Total</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ordersTableBody">
+                                    <!-- Rows will be added here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        let token = localStorage.getItem('jwt_token');
+
+        // --- AUTHENTICATION ---
+        function checkAuth() {
+            if (token) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboardScreen').style.display = 'block';
+                document.getElementById('userDisplay').innerText = 'Logged as: Admin';
+                startPolling();
+            } else {
+                document.getElementById('loginScreen').style.display = 'block';
+                document.getElementById('dashboardScreen').style.display = 'none';
+            }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('username', 'admin');
+            formData.append('password', 'secret');
+
+            try {
+                const response = await fetch(`${API_URL}/token`, { method: 'POST', body: formData });
+                if (response.ok) {
+                    const data = await response.json();
+                    token = data.access_token;
+                    localStorage.setItem('jwt_token', token);
+                    checkAuth();
+                } else {
+                    alert("Login Failed");
+                }
+            } catch (error) {
+                console.error("Login Error:", error);
+            }
+        });
+
+        function logout() {
+            token = null;
+            localStorage.removeItem('jwt_token');
+            checkAuth();
+        }
+
+        // --- DASHBOARD LOGIC ---
+        async function fetchStock() {
+            if (!token) return;
+            try {
+                const response = await fetch(`${API_URL}/products`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const products = await response.json();
+
+                    // Update Select Options
+                    const select = document.getElementById('productId');
+                    const currentVal = select.value;
+
+                    if (select.options.length !== products.length) {
+                        select.innerHTML = '';
+                        products.forEach(p => {
+                            const option = document.createElement('option');
+                            option.value = p.id;
+                            option.text = `${p.name} ($${p.price})`;
+                            select.appendChild(option);
+                        });
+                        if (currentVal) select.value = currentVal;
+                    }
+
+                    // Update Stock Display (for selected product)
+                    const selectedId = parseInt(select.value || (products[0] ? products[0].id : 0));
+                    const selectedProduct = products.find(p => p.id === selectedId);
+
+                    if (selectedProduct) {
+                        document.getElementById('stockContainer').innerHTML = `
+                            <h1 class="display-4">${selectedProduct.stock}</h1>
+                            <p class="lead">#${selectedProduct.id} ${selectedProduct.name}</p>
+                            <h4 class="text-success">$${selectedProduct.price}</h4>
+                            <small class="text-muted">Updates live from Warehouse</small>
+                        `;
+                    }
+                }
+            } catch (error) { console.error("Stock Error:", error); }
+        }
+
+        // Update stock display when selection changes
+        document.getElementById('productId').addEventListener('change', fetchStock);
+
+        document.getElementById('productForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const product = {
+                name: document.getElementById('prodName').value,
+                price: parseFloat(document.getElementById('prodPrice').value),
+                stock: parseInt(document.getElementById('prodStock').value)
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/products`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(product)
+                });
+
+                if (response.ok) {
+                    document.getElementById('productForm').reset();
+                    document.getElementById('productId').innerHTML = '';
+                    fetchStock();
+                    alert("Product Created Successfully!");
+                } else {
+                    alert("Failed to create product");
+                }
+            } catch (error) { console.error("Product Error:", error); }
+        });
+
+        async function fetchOrders() {
+            if (!token) return;
+            try {
+                const response = await fetch(`${API_URL}/orders`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const orders = await response.json();
+                    const tbody = document.getElementById('ordersTableBody');
+                    tbody.innerHTML = '';
+
+                    orders.forEach(order => {
+                        let actionBtn = '-';
+                        if (order.status === 'PROCESSED') {
+                            actionBtn = `<a href="${API_URL}/orders/${order.id}/invoice" target="_blank" class="btn btn-sm btn-outline-primary">Invoice PDF</a>`;
+                        } else if (order.status === 'CREATED' || order.status === 'FAILED_QUEUE' || order.status === 'OUT_OF_STOCK') {
+                            actionBtn = `<button type="button" class="btn btn-sm btn-outline-warning" onclick="republishOrder(${order.id})">Reintentar</button>`;
+                        }
+
+                        const row = `
+                            <tr>
+                                <td>#${order.id}</td>
+                                <td>${order.customer_name}</td>
+                                <td>${order.quantity}</td>
+                                <td>$${order.total_amount || 0}</td>
+                                <td>${getStatusBadge(order.status)}</td>
+                                <td>${actionBtn}</td>
+                            </tr>
+                        `;
+                        tbody.innerHTML += row;
+                    });
+                } else if (response.status === 401) {
+                    logout(); // Token expired
+                }
+            } catch (error) { console.error("Polling Error:", error); }
+        }
+
+        function getStatusBadge(status) {
+            let color = 'secondary';
+            if (status === 'CREATED') color = 'primary';
+            if (status === 'PROCESSED') color = 'success';
+            if (status === 'FAILED' || status === 'FAILED_PRODUCT_NOT_FOUND' || status === 'FAILED_QUEUE') color = 'danger';
+            if (status === 'OUT_OF_STOCK') color = 'warning text-dark';
+
+            return `<span class="badge bg-${color}">${status}</span>`;
+        }
+
+        async function republishOrder(orderId) {
+            if (!token) return;
+            try {
+                const response = await fetch(`${API_URL}/orders/${orderId}/republish`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(data.message || 'Pedido encolado. Se procesará en breve.');
+                    fetchOrders();
+                } else {
+                    const err = await response.json().catch(() => ({}));
+                    alert(err.detail || 'No se pudo reintentar.');
+                }
+            } catch (error) { console.error("Republish Error:", error); alert("Error al reintentar."); }
+        }
+
+        document.getElementById('orderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const order = {
+                customer_name: document.getElementById('customerName').value,
+                cedula: document.getElementById('cedula').value,
+                product_id: parseInt(document.getElementById('productId').value),
+                quantity: parseInt(document.getElementById('quantity').value)
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(order)
+                });
+
+                if (response.ok) {
+                    document.getElementById('orderForm').reset();
+                    fetchOrders();
+                    fetchStock(); // Update stock immediately
+                } else if (response.status === 503) {
+                    const err = await response.json().catch(() => ({}));
+                    alert(err.detail || "No se pudo encolar el pedido. Use 'Reintentar' en la lista más tarde.");
+                    fetchOrders();
+                } else {
+                    alert("Failed to create order");
+                }
+            } catch (error) { console.error("Order Error:", error); }
+        });
+
+        // --- POLLING ---
+        async function fetchAnalytics() {
+            if (!token) return;
+            try {
+                const response = await fetch(`${API_URL}/analytics`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('analyticsTotal').textContent = data.total_orders;
+                    document.getElementById('analyticsRevenue').textContent = '$' + data.total_revenue;
+                    document.getElementById('analyticsLast7').textContent = data.orders_last_7_days;
+                    const byStatus = data.orders_by_status || {};
+                    const badges = Object.entries(byStatus).map(([s, n]) => `${s}: ${n}`).join(' | ') || '-';
+                    document.getElementById('analyticsByStatus').textContent = badges;
+                }
+            } catch (e) { console.error("Analytics Error:", e); }
+        }
+
+        function startPolling() {
+            fetchStock();
+            fetchOrders();
+            fetchAnalytics();
+            setInterval(() => {
+                if (token) {
+                    fetchStock();
+                    fetchOrders();
+                    fetchAnalytics();
+                }
+            }, 2000);
+        }
+
+        // Init
+        checkAuth();
+    </script>
+</body>
+
+</html>

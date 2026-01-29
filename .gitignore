@@ -1,0 +1,16 @@
+# Variables de entorno (secretos, webhooks). No subir.
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
