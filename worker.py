@@ -179,29 +179,40 @@ def process_order(ch, method, properties, body):
 
 # --- File Watcher Logic ---
 def process_csv_file(filepath):
+    """Ingesta CSV: formato producto_id,cantidad. Valida formato, tipos y existencia del producto."""
     print(f" [FILE] Processing {filepath}...")
     try:
         db = SessionLocal()
-        with open(filepath, 'r') as f:
+        line_num = 0
+        invalid_lines = []
+        with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
             for line in f:
+                line_num += 1
                 parts = line.strip().split(',')
-                if len(parts) >= 2:
+                if len(parts) < 2:
+                    invalid_lines.append((line_num, line.strip(), "menos de 2 columnas"))
+                    continue
+                try:
                     prod_id = int(parts[0])
                     qty = int(parts[1])
-                    
-                    product = db.query(models.Product).filter(models.Product.id == prod_id).first()
-                    if product:
-                        product.stock += qty
-                        print(f" [FILE] Restocked Product {prod_id} by {qty}. New Stock: {product.stock}")
-                    else:
-                        print(f" [FILE] Product {prod_id} not found.")
+                except ValueError:
+                    invalid_lines.append((line_num, line.strip(), "valores no numéricos"))
+                    continue
+                if qty <= 0:
+                    invalid_lines.append((line_num, line.strip(), "cantidad debe ser positiva"))
+                    continue
+                product = db.query(models.Product).filter(models.Product.id == prod_id).first()
+                if product:
+                    product.stock += qty
+                    print(f" [FILE] Restocked Product {prod_id} by {qty}. New Stock: {product.stock}")
+                else:
+                    invalid_lines.append((line_num, f"prod_id={prod_id}", "producto no existe en BD"))
+        for ln, content, reason in invalid_lines:
+            print(f" [FILE] Línea inválida {ln}: {reason} | {content[:50]}")
         db.commit()
         db.close()
-        
-        # Rename processed file
         os.rename(filepath, filepath + ".processed")
         print(f" [FILE] File processed successfully.")
-        
     except Exception as e:
         print(f" [FILE] Error processing file: {e}")
 
