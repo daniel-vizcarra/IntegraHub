@@ -183,17 +183,6 @@ IntegraHub/
 
 ---
 
-## Documentación adicional
-
-En la carpeta `docs/` encontrará:
-
-- **INFORME-PROYECTO.md**: Informe del proyecto (contexto, arquitectura, flujos, patrones, diagramas).
-- **MATRIZ-PATRONES.md**: Matriz de patrones de integración implementados.
-- **RESUMEN-TECNICO-CODIGO.md**: Resumen técnico del código para preguntas de defensa.
-- **README.md**: Descripción de los entregables (diagramas, Postman, etc.).
-
----
-
 ## Solución de problemas
 
 - **Los contenedores no arrancan:** Verifique que Docker esté en ejecución y que los puertos 5432, 5672, 15672 y 8000 estén libres. Ejecute `docker compose logs` para ver errores por servicio.
@@ -202,7 +191,3 @@ En la carpeta `docs/` encontrará:
 - **RabbitMQ no acepta conexiones:** Espere a que el servicio pase su healthcheck (varios segundos tras `docker compose up -d`). El backend y el worker dependen de que RabbitMQ esté listo.
 
 ---
-
-## Licencia y autoría
-
-Proyecto académico. Consulte la documentación del curso y del repositorio para detalles de autoría y licencia.
